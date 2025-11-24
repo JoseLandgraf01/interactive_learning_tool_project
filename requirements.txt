@@ -1,0 +1,3 @@
+# Core dependencies for Interactive Learning Tool
+openai
+pytest

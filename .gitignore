@@ -1,0 +1,21 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments (common names)
+venv/
+.venv/
+env/
+.env/
+
+# Test cache
+.pytest_cache/
+
+# Environment / secrets (files)
+.env
+
+# Logs
+logs/
+*.log
