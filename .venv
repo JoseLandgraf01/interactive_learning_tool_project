@@ -1,3 +1,0 @@
-# Local overrides for the Interactive Learning Tool
-OPENAI_API_KEY=your_real_key_here_later
-LLM_MODEL=gpt-4.1-mini
