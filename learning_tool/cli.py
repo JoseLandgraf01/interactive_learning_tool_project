@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
 from typing import List
 
-from .config import AppConfig, load_config
-from .exceptions import LearningToolError, LLMError
-from .llm_client import LLMClient, GeneratedQuestionSpec
-from .models import Question, QuestionSource, QuestionType
-from .quiz_manager import QuizManager
-from .repository import QuestionRepository
+from learning_tool.config import AppConfig, load_config
+from learning_tool.exceptions import LearningToolError, LLMError
+from learning_tool.llm_client import LLMClient, GeneratedQuestionSpec
+from learning_tool.models import Question, QuestionSource, QuestionType
+from learning_tool.quiz_manager import QuizManager
+from learning_tool.repository import QuestionRepository
 
 
 def main() -> None:

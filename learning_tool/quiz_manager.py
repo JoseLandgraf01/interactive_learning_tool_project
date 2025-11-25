@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Sequence
 import random
 
-from .models import Question
-from .repository import QuestionRepository
+from learning_tool.models import Question
+from learning_tool.repository import QuestionRepository
 
 
 @dataclass

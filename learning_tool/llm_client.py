@@ -6,15 +6,11 @@ import json
 import logging
 import os
 
-from .exceptions import LLMError
-from .models import QuestionType
+from learning_tool.exceptions import LLMError
+from learning_tool.models import QuestionType
+from openai import OpenAI  # external dependency; stubs come from the package
 
 logger = logging.getLogger(__name__)
-
-try:  # pragma: no cover
-    from openai import OpenAI  # type: ignore[import]
-except Exception:  # pragma: no cover
-    OpenAI = None  # type: ignore[assignment]
 
 
 @dataclass
@@ -36,16 +32,18 @@ class LLMClient:
     timeout_seconds: int = 30
 
     def __post_init__(self) -> None:
+        """Initialise underlying OpenAI client or fall back if no API key is set."""
         api_key = os.getenv("OPENAI_API_KEY")
         env = os.getenv("LEARNING_TOOL_ENV", "dev").lower()
 
-        if OpenAI is None or not api_key:
-            # NF6: in dev we happily fall back; in prod we log a warning.
+        if not api_key:
+            # NF8: in dev we happily fall back; in prod we log a warning.
             if env == "prod":
                 logger.warning("OPENAI_API_KEY missing in prod environment.")
             self._client = None
-        else:  # pragma: no cover
+        else:
             self._client = OpenAI(api_key=api_key)
+
 
     @property
     def is_available(self) -> bool:
@@ -165,7 +163,7 @@ class LLMClient:
         )
 
         try:  # pragma: no cover
-            response = self._client.responses.create(  # type: ignore[call-arg]
+            response = self._client.responses.create(
                 model=self.model,
                 instructions=instructions,
                 input=prompt,
@@ -252,7 +250,7 @@ class LLMClient:
         )
 
         try:  # pragma: no cover
-            response = self._client.responses.create(  # type: ignore[call-arg]
+            response = self._client.responses.create(
                 model=self.model,
                 instructions=instructions,
                 input=prompt,

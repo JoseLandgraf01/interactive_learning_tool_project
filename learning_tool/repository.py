@@ -6,8 +6,8 @@ from typing import List
 import json
 import logging
 
-from .exceptions import PersistenceError
-from .models import Question
+from learning_tool.exceptions import PersistenceError
+from learning_tool.models import Question
 
 logger = logging.getLogger(__name__)
 

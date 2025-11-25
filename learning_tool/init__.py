@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from .config import AppConfig, load_config
-from .models import Question, QuestionStats, QuestionType, QuestionSource
-from .quiz_manager import QuizManager
-from .repository import QuestionRepository
-from .llm_client import LLMClient
+from learning_tool.config import AppConfig, load_config
+from learning_tool.models import (
+    Question,
+    QuestionStats,
+    QuestionType,
+    QuestionSource,
+)
+from learning_tool.quiz_manager import QuizManager
+from learning_tool.repository import QuestionRepository
+from learning_tool.llm_client import LLMClient
 
 __all__ = [
     "AppConfig",
