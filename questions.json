@@ -1,0 +1,67 @@
+[
+  {
+    "id": "efea99d5d1e948358880ff168e39886f",
+    "topic": "Real MAdrid",
+    "text": "In your own words, explain what 'Real MAdrid' means (variation 1).",
+    "question_type": "freeform",
+    "source": "llm",
+    "active": true,
+    "options": [],
+    "correct_option_index": null,
+    "reference_answer": "A clear, concise explanation of Real MAdrid.",
+    "stats": {
+      "times_shown": 1,
+      "times_correct": 0
+    }
+  },
+  {
+    "id": "de4183c0d8434d069d72c4fd9cff8746",
+    "topic": "Real Madrid",
+    "text": "What city is Real Madrid based in?",
+    "question_type": "mcq",
+    "source": "llm",
+    "active": true,
+    "options": [
+      "Barcelona",
+      "Madrid",
+      "Sevilla",
+      "Valencia"
+    ],
+    "correct_option_index": 1,
+    "reference_answer": null,
+    "stats": {
+      "times_shown": 1,
+      "times_correct": 1
+    }
+  },
+  {
+    "id": "ce0d2c77d34e4189a45c604db4c073b8",
+    "topic": "Real Madrid",
+    "text": "Name one famous player who has played for Real Madrid.",
+    "question_type": "freeform",
+    "source": "llm",
+    "active": true,
+    "options": [],
+    "correct_option_index": null,
+    "reference_answer": "Some famous players include Cristiano Ronaldo, Alfredo Di Stefano, and Zinedine Zidane.",
+    "stats": {
+      "times_shown": 1,
+      "times_correct": 1
+    }
+  },
+  {
+    "id": "4429e3f9b4694cec9f8ccee9444e40c6",
+    "topic": "Real Madrid",
+    "text": "What colors are on Real Madrid's home jersey?",
+    "question_type": "freeform",
+    "source": "llm",
+    "active": true,
+    "options": [],
+    "correct_option_index": null,
+    "reference_answer": "Real Madrid's home jersey is primarily white.",
+    "stats": {
+      "times_shown": 1,
+      "times_correct": 1
+    }
+  }
+]
