@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
-import json
-import logging
 
 from learning_tool.exceptions import PersistenceError
 from learning_tool.models import Question

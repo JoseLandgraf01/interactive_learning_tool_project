@@ -1,14 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
 import json
 import logging
 import os
+import random
+import time
+from dataclasses import dataclass
+from typing import Any, List, Optional, Tuple
 
 from learning_tool.exceptions import LLMError
 from learning_tool.models import QuestionType
 from openai import OpenAI  # external dependency; stubs come from the package
+
+from .prompts import (
+    EVAL_FREEFORM_INSTRUCTIONS,
+    GEN_QUESTIONS_INSTRUCTIONS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +37,7 @@ class LLMClient:
 
     model: str = "gpt-4.1-mini"
     timeout_seconds: int = 30
+    _client: Any | None = None
 
     def __post_init__(self) -> None:
         """Initialise underlying OpenAI client or fall back if no API key is set."""
@@ -42,13 +50,59 @@ class LLMClient:
                 logger.warning("OPENAI_API_KEY missing in prod environment.")
             self._client = None
         else:
-            self._client = OpenAI(api_key=api_key)
+            # pass timeout into the OpenAI client
+            self._client = OpenAI(api_key=api_key, timeout=self.timeout_seconds)
 
+        # Simple client-side rate limiting & retry config
+        self._last_call_ts: float = 0.0
+        self._min_interval: float = 1.0  # seconds between calls
+        self._max_attempts: int = 3
 
     @property
     def is_available(self) -> bool:
         """Return True if a real LLM client is configured and usable."""
         return self._client is not None
+
+    # --- infrastructure helpers: rate limit + retry --------------------
+
+    def _respect_rate_limit(self) -> None:
+        """Ensure a minimum delay between API calls (very simple client-side rate limit)."""
+        now = time.time()
+        elapsed = now - self._last_call_ts
+        if elapsed < self._min_interval:
+            time.sleep(self._min_interval - elapsed)
+        self._last_call_ts = time.time()
+
+    def _call_with_retry(self, func, *args, **kwargs):
+        """
+        Call `func` with retries for transient HTTP errors.
+
+        Retries for typical transient statuses (429 / 5xx) with exponential
+        backoff and jitter. If the error is not transient or all attempts fail,
+        the exception is re-raised for the caller to handle.
+        """
+        for attempt in range(1, self._max_attempts + 1):
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:  # pragma: no cover  (HTTP-level behaviour)
+                status = getattr(exc, "status_code", None)
+                transient = status in (429, 500, 502, 503)
+
+                if not transient or attempt == self._max_attempts:
+                    # Not transient or out of retries: let caller wrap in LLMError.
+                    raise
+
+                backoff = (2 ** (attempt - 1)) + random.random()
+                logger.warning(
+                    "Transient LLM error (status=%s, attempt=%s/%s): %s; "
+                    "retrying in %.1fs",
+                    status,
+                    attempt,
+                    self._max_attempts,
+                    exc,
+                    backoff,
+                )
+                time.sleep(backoff)
 
     # --- public API -----------------------------------------------------
 
@@ -146,29 +200,42 @@ class LLMClient:
         topic: str,
         num_questions: int,
     ) -> List[GeneratedQuestionSpec]:
-        """Call the OpenAI Responses API to generate questions.  # F3"""
+        """
+        Call the OpenAI Responses API to generate questions.  # F3
+
+        Expects the LLM (guided by GEN_QUESTIONS_INSTRUCTIONS) to return JSON:
+
+        {
+          "mcq": [
+            {"question": "...", "options": ["...","..."], "correct_index": 0},
+            ...
+          ],
+          "freeform": [
+            {"question": "...", "reference_answer": "..."},
+            ...
+          ]
+        }
+        """
         if self._client is None:  # pragma: no cover
             raise LLMError("LLM client is not configured.")
 
-        instructions = (
-            "You generate beginner-friendly study questions in JSON format. "
-            "Return ONLY JSON, no extra text. The JSON must be a list of objects, "
-            "each with: question_type ('mcq' or 'freeform'), text (string), "
-            "options (list of strings, for 'mcq' only), correct_option_index (integer, "
-            "for 'mcq' only), reference_answer (string, for 'freeform' only)."
-        )
+        self._respect_rate_limit()
+
         prompt = (
-            f"Create {num_questions} simple questions to help a beginner learn about: {topic}. "
-            "Include at least one multiple-choice question and one freeform question."
+            f"Create {num_questions} beginner-friendly questions to help a student "
+            f"learn about: {topic}. Include at least one multiple-choice question "
+            f"and one freeform question. Use the JSON structure from the instructions."
         )
 
         try:  # pragma: no cover
-            response = self._client.responses.create(
+            response = self._call_with_retry(
+                self._client.responses.create,
                 model=self.model,
-                instructions=instructions,
+                instructions=GEN_QUESTIONS_INSTRUCTIONS,
                 input=prompt,
                 max_output_tokens=800,
-            )
+        )
+
         except Exception as exc:
             logger.exception("LLM call failed for question generation (topic=%s)", topic)
             raise LLMError("Failed calling LLM for question generation.") from exc
@@ -183,42 +250,52 @@ class LLMClient:
             logger.exception("Invalid JSON from LLM for question generation")
             raise LLMError("LLM did not return valid JSON for questions.") from exc
 
-        if not isinstance(data, list):
-            raise LLMError("Expected a JSON list of question objects from LLM.")
+        if not isinstance(data, dict):
+            raise LLMError("Expected a JSON object with 'mcq' and 'freeform' lists.")
 
         specs: List[GeneratedQuestionSpec] = []
-        for item in data:
+
+        # Validate MCQs
+        for item in data.get("mcq", []):
             if not isinstance(item, dict):
                 continue
 
-            qtype_str = str(item.get("question_type", "freeform")).lower()
-            qtype = QuestionType.MCQ if qtype_str == "mcq" else QuestionType.FREEFORM
-            text = str(item.get("text", "")).strip()
+            text = str(item.get("question", "")).strip()
             if not text:
                 continue
 
-            options = item.get("options") if qtype is QuestionType.MCQ else None
-            if isinstance(options, list):
-                options = [str(opt) for opt in options]
-            else:
-                options = None
+            raw_options = item.get("options", [])
+            if not isinstance(raw_options, list) or len(raw_options) < 2:
+                continue
+            options = [str(opt) for opt in raw_options]
 
-            correct_index = item.get("correct_option_index")
-            if qtype is QuestionType.MCQ and not isinstance(correct_index, int):
+            correct_index = item.get("correct_index", 0)
+            if not isinstance(correct_index, int) or not (0 <= correct_index < len(options)):
                 correct_index = 0
-
-            reference_answer = (
-                str(item.get("reference_answer", "")).strip()
-                if qtype is QuestionType.FREEFORM
-                else None
-            )
 
             specs.append(
                 GeneratedQuestionSpec(
-                    question_type=qtype,
+                    question_type=QuestionType.MCQ,
                     text=text,
                     options=options,
                     correct_option_index=correct_index,
+                )
+            )
+
+        # Validate freeform questions
+        for item in data.get("freeform", []):
+            if not isinstance(item, dict):
+                continue
+
+            text = str(item.get("question", "")).strip()
+            reference_answer = str(item.get("reference_answer", "")).strip()
+            if not text or not reference_answer:
+                continue
+
+            specs.append(
+                GeneratedQuestionSpec(
+                    question_type=QuestionType.FREEFORM,
+                    text=text,
                     reference_answer=reference_answer,
                 )
             )
@@ -234,15 +311,20 @@ class LLMClient:
         reference_answer: str,
         user_answer: str,
     ) -> Tuple[bool, str]:
-        """Call the OpenAI Responses API to grade a freeform answer.  # F6"""
+        """
+        Call the OpenAI Responses API to grade a freeform answer.  # F6
+
+        Expects JSON:
+
+        { "correct": true/false, "explanation": "..." }
+
+        but also accepts legacy `is_correct` for robustness.
+        """
         if self._client is None:  # pragma: no cover
             raise LLMError("LLM client is not configured.")
 
-        instructions = (
-            "You are a strict but fair grader for short-answer questions. "
-            "Return ONLY JSON, with keys 'is_correct' (true/false) and "
-            "'explanation' (string). Consider semantic meaning, not just exact words."
-        )
+        self._respect_rate_limit()
+
         prompt = (
             f"Question: {question_text}\n"
             f"Reference answer: {reference_answer}\n"
@@ -250,12 +332,14 @@ class LLMClient:
         )
 
         try:  # pragma: no cover
-            response = self._client.responses.create(
+            response = self._call_with_retry(
+                self._client.responses.create,
                 model=self.model,
-                instructions=instructions,
+                instructions=EVAL_FREEFORM_INSTRUCTIONS,
                 input=prompt,
                 max_output_tokens=400,
-            )
+        )
+
         except Exception as exc:
             logger.exception("LLM call failed for freeform evaluation")
             raise LLMError("Failed calling LLM for freeform evaluation.") from exc
@@ -273,6 +357,11 @@ class LLMClient:
         if not isinstance(data, dict):
             raise LLMError("Expected a JSON object from LLM evaluation.")
 
-        is_correct = bool(data.get("is_correct", False))
+        # Prefer new schema { "correct": ... }, but accept legacy "is_correct"
+        if "correct" in data:
+            is_correct = bool(data["correct"])
+        else:
+            is_correct = bool(data.get("is_correct", False))
+
         explanation = str(data.get("explanation", "")).strip() or "No explanation provided."
         return is_correct, explanation

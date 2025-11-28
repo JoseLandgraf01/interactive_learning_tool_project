@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from learning_tool.exceptions import QuestionValidationError
 from learning_tool.models import (
     Question,

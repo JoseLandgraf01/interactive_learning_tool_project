@@ -1,18 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import List, Optional, Sequence
 import random
+from dataclasses import dataclass, field
+from typing import List, Optional, Protocol, Sequence
 
 from learning_tool.models import Question
-from learning_tool.repository import QuestionRepository
+
+
+class QuestionRepositoryProtocol(Protocol):
+    """Minimal interface required by QuizManager."""
+
+    def load_all(self) -> List[Question]:
+        ...
+
+    def save_all(self, questions: List[Question]) -> None:
+        ...
 
 
 @dataclass
 class QuizManager:
     """Coordinate quiz logic: selection, activation, stats.  # F5, F6, F7, NF1, NF3, NF8"""
 
-    repository: QuestionRepository
+    repository: QuestionRepositoryProtocol
     questions: List[Question] = field(default_factory=list)
 
     def __post_init__(self) -> None:

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-
 import pytest
-
-from learning_tool.llm_client import LLMClient, GeneratedQuestionSpec
+from learning_tool.llm_client import GeneratedQuestionSpec, LLMClient
 from learning_tool.models import QuestionType
 
 

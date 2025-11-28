@@ -5,7 +5,7 @@ from typing import List
 
 from learning_tool.config import AppConfig, load_config
 from learning_tool.exceptions import LearningToolError, LLMError
-from learning_tool.llm_client import LLMClient, GeneratedQuestionSpec
+from learning_tool.llm_client import GeneratedQuestionSpec, LLMClient
 from learning_tool.models import Question, QuestionSource, QuestionType
 from learning_tool.quiz_manager import QuizManager
 from learning_tool.repository import QuestionRepository

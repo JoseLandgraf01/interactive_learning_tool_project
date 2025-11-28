@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 from pathlib import Path
-from learning_tool.models import Question, QuestionSource, QuestionType
+from typing import List
+
+from learning_tool.models import Question, QuestionSource, QuestionStats, QuestionType
 from learning_tool.quiz_manager import QuizManager
 from learning_tool.repository import QuestionRepository
-
-from learning_tool.models import QuestionStats
 
 
 def create_manager(tmp_path: Path) -> QuizManager:
@@ -53,14 +54,20 @@ def test_select_for_test_respects_count(tmp_path: Path) -> None:
 
 
 class _DummyRepository:
-    """Very small in-memory repository used for testing QuizManager."""
+    """Simple in-memory repository used only for QuizManager tests."""
 
-    def __init__(self, questions: list[Question]) -> None:
-        self._questions = questions
+    def __init__(self, questions: List[Question]) -> None:
+        self._questions = list(questions)
+        # keep track of the last saved snapshot if tests ever want to inspect it
+        self.saved_questions: List[Question] = []
 
-    def load_all(self) -> list[Question]:
-        """Mimic QuestionRepository.load_all()."""
+    def load_all(self) -> List[Question]:
+        # Return a copy so tests can't mutate internal state accidentally
         return list(self._questions)
+
+    def save_all(self, questions: List[Question]) -> None:
+        # For the tests we don't need real persistence; just remember what was saved.
+        self.saved_questions = list(questions)
 
 
 def _make_freeform_question(

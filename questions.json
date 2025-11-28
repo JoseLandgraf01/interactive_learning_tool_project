@@ -5,12 +5,12 @@
     "text": "In your own words, explain what 'Real MAdrid' means (variation 1).",
     "question_type": "freeform",
     "source": "llm",
-    "active": true,
+    "active": false,
     "options": [],
     "correct_option_index": null,
     "reference_answer": "A clear, concise explanation of Real MAdrid.",
     "stats": {
-      "times_shown": 1,
+      "times_shown": 2,
       "times_correct": 0
     }
   },
@@ -30,8 +30,8 @@
     "correct_option_index": 1,
     "reference_answer": null,
     "stats": {
-      "times_shown": 1,
-      "times_correct": 1
+      "times_shown": 2,
+      "times_correct": 2
     }
   },
   {
@@ -45,8 +45,8 @@
     "correct_option_index": null,
     "reference_answer": "Some famous players include Cristiano Ronaldo, Alfredo Di Stefano, and Zinedine Zidane.",
     "stats": {
-      "times_shown": 1,
-      "times_correct": 1
+      "times_shown": 2,
+      "times_correct": 2
     }
   },
   {
@@ -60,8 +60,77 @@
     "correct_option_index": null,
     "reference_answer": "Real Madrid's home jersey is primarily white.",
     "stats": {
+      "times_shown": 2,
+      "times_correct": 2
+    }
+  },
+  {
+    "id": "766ec48418374a9087936a804652bbea",
+    "topic": "Finance",
+    "text": "What is the primary purpose of a budget in personal finance?",
+    "question_type": "mcq",
+    "source": "llm",
+    "active": true,
+    "options": [
+      "To track income and expenses",
+      "To borrow money from friends",
+      "To avoid paying taxes",
+      "To invest in the stock market"
+    ],
+    "correct_option_index": 0,
+    "reference_answer": null,
+    "stats": {
+      "times_shown": 0,
+      "times_correct": 0
+    }
+  },
+  {
+    "id": "3897cd17ecda4e5eb7afe6e102aec3c4",
+    "topic": "Trump",
+    "text": "What was Donald Trump's role before he became President of the United States?",
+    "question_type": "mcq",
+    "source": "llm",
+    "active": true,
+    "options": [
+      "A businessman and TV personality",
+      "A professional athlete",
+      "A school teacher"
+    ],
+    "correct_option_index": 0,
+    "reference_answer": null,
+    "stats": {
+      "times_shown": 0,
+      "times_correct": 0
+    }
+  },
+  {
+    "id": "764972e2253041a6bae4016a07657530",
+    "topic": "Trump",
+    "text": "Have Trump a nice haircut?",
+    "question_type": "freeform",
+    "source": "llm",
+    "active": true,
+    "options": [],
+    "correct_option_index": null,
+    "reference_answer": "Absolutly, not.",
+    "stats": {
       "times_shown": 1,
       "times_correct": 1
+    }
+  },
+  {
+    "id": "0d6383b08e1245ac8e251d53018e44f1",
+    "topic": "Trump",
+    "text": "Where was Donald Trump born?",
+    "question_type": "freeform",
+    "source": "llm",
+    "active": true,
+    "options": [],
+    "correct_option_index": null,
+    "reference_answer": "Donald Trump was born in Queens, New York City.",
+    "stats": {
+      "times_shown": 0,
+      "times_correct": 0
     }
   }
 ]
